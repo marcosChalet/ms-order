@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  pg-database:
+    image: postgres:15.5-alpine
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=johndoe
+      - POSTGRES_PASSWORD=randompassword
+      - POSTGRES_DB=order
+      - POSTGRES_PORT=5432
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: 'pg_isready -U $$POSTGRES_USER'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+    restart: always
+    ports:
+      - 3000:3000
+    environment:
+      - DATABASE_URL=postgresql://johndoe:randompassword@pg-database:5432/order?schema=public
+      - NPM_RUN_COMMAND=npm run start:migrate:dev
+    depends_on:
+      - pg-database
+
+volumes:
+  pg-data:
+    driver: local
