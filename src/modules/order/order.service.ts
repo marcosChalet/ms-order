@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../global/prisma/prisma.service';
+import { ClientProxy } from '@nestjs/microservices';
 
 type ItemType = {
   product_id: number;
@@ -17,7 +18,10 @@ type OrderType = {
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(OrderService.name);
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    @Inject('ORDER_SERVICE') private client: ClientProxy,
+  ) {}
 
   async createOrder({
     customer_id,
@@ -42,6 +46,18 @@ export class OrderService {
         },
         include: {
           order_items: true,
+        },
+      });
+
+      this.client.emit('orders_created', {
+        id: customer_id,
+        data: {
+          customer_id,
+          order_date: new Date(),
+          total_price,
+          order_items: {
+            create: itens,
+          },
         },
       });
 
