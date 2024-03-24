@@ -27,6 +27,7 @@ services:
       - 3000:3000
     environment:
       - DATABASE_URL=postgresql://johndoe:randompassword@pg-database:5432/order?schema=public
+      - EMAIL_SERVICE_ROUTE=http://192.168.18.6:3001/send
       - NPM_RUN_COMMAND=npm run start:migrate:dev
     depends_on:
       - pg-database
