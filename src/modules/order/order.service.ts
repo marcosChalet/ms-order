@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../global/prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 
 type ItemType = {
   product_id: number;
@@ -17,7 +18,10 @@ type OrderType = {
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(OrderService.name);
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async createOrder({
     customer_id,
@@ -44,6 +48,28 @@ export class OrderService {
           order_items: true,
         },
       });
+
+      this.logger.debug(this.configService.get<string>('EMAIL_SERVICE_ROUTE'));
+
+      const resMSEmail = await fetch(
+        this.configService.get<string>('EMAIL_SERVICE_ROUTE'),
+        {
+          method: 'post',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'Marcos',
+            emailTo: 'chaletmarcos@gmail.com',
+            message:
+              'Seu pagamento foi processado com sucesso! Aguarde a confirmação do pagamento.',
+          }),
+        },
+      );
+
+      if (resMSEmail.ok) {
+        this.logger.log('E-mail de confirmação enviado');
+      } else {
+        this.logger.warn('Erro ao enviar e-mail');
+      }
 
       this.logger.log(
         `Ordem criada com sucesso (ID = ${Order.order_id}) | ` +
